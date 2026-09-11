@@ -7,7 +7,7 @@ const app = express();
 // 1. SECURITY: Dynamic CORS for Production
 app.use(cors({
     // Uses the deployed frontend URL if available, otherwise defaults to local Vite port
-    origin: process.env.FRONTEND_URL || "http://localhost:5173", 
+    origin: process.env.FRONTEND_URL, 
     credentials: true
 }));
 
