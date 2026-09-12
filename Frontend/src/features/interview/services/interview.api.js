@@ -66,10 +66,26 @@ export const getAllInterviewReports = async () => {
  */
 export const generateResumePdf = async ({ interviewReportId }) => {
     try {
-        // 2. ROUTE SYNC: Updated to match the RESTful backend route structure (/:interviewId/resume)
+        // 1. Fetch the PDF as a binary blob
         const response = await api.post(`/api/interview/${interviewReportId}/resume`, null, {
             responseType: "blob"
         });
+
+        // 2. Convert the binary data into a downloadable URL
+        const blob = new Blob([response.data], { type: "application/pdf" });
+        const url = window.URL.createObjectURL(blob);
+
+        // 3. Create a hidden link, trigger the download, and remove the link
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", "Interview_Report.pdf");
+        document.body.appendChild(link);
+        
+        link.click();
+        
+        // 4. Clean up memory
+        link.remove();
+        window.URL.revokeObjectURL(url);
 
         return response.data;
     } catch (err) {
