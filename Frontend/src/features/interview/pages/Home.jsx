@@ -7,33 +7,63 @@ const Home = () => {
     
     const [jobDescription, setJobDescription] = useState("");
     const [selfDescription, setSelfDescription] = useState("");
-    const [fileName, setFileName] = useState(""); // UI state to show uploaded file
-    const [error, setError] = useState(""); // UI validation state
+    const [fileName, setFileName] = useState(""); 
+    const [resumeFile, setResumeFile] = useState(null); // Added state to hold the actual file
+    const [isDragging, setIsDragging] = useState(false); // Added state for drag visuals
+    const [error, setError] = useState(""); 
     
     const resumeInputRef = useRef(null);
     const navigate = useNavigate();
 
+    // 1. DRAG AND DROP HANDLERS
+    const handleDragOver = (e) => {
+        e.preventDefault(); // Prevents browser from opening the file
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const droppedFile = e.dataTransfer.files[0];
+            // Basic validation for PDF
+            if (droppedFile.type === "application/pdf" || droppedFile.name.endsWith(".pdf")) {
+                setFileName(droppedFile.name);
+                setResumeFile(droppedFile);
+                setError("");
+            } else {
+                setError("Please upload a valid PDF file.");
+            }
+        }
+    };
+
+    // 2. CLICK UPLOAD HANDLER
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files.length > 0) {
             setFileName(e.target.files[0].name);
-            setError(""); // Clear errors if user fixes input
+            setResumeFile(e.target.files[0]);
+            setError(""); 
         }
     };
 
     const handleGenerateReport = async () => {
-        setError(""); // Reset errors
+        setError(""); 
         
-        // 1. Frontend Validation
         if (!jobDescription.trim()) {
             return setError("Target Job Description is required.");
         }
         
-        const resumeFile = resumeInputRef.current?.files[0];
+        // Uses the state file instead of the ref
         if (!resumeFile && !selfDescription.trim()) {
             return setError("Please provide either a Resume or a Quick Self-Description.");
         }
 
-        // 2. Safe API Call
         try {
             const data = await generateReport({ jobDescription, selfDescription, resumeFile });
             if (data && data._id) {
@@ -44,7 +74,6 @@ const Home = () => {
         }
     };
 
-    // Consistent minimal zinc loading state
     if (loading) {
         return (
             <main className="min-h-screen flex flex-col items-center justify-center bg-zinc-100">
@@ -56,8 +85,6 @@ const Home = () => {
 
     return (
         <div className="min-h-screen bg-zinc-100 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
-            
-            {/* Page Header */}
             <header className="text-center max-w-2xl mx-auto mb-10">
                 <h1 className="text-3xl font-bold text-zinc-900">
                     Create Your Custom <span className="text-zinc-500">Interview Plan</span>
@@ -67,17 +94,13 @@ const Home = () => {
                 </p>
             </header>
 
-            {/* Error Banner */}
             {error && (
                 <div className="w-full max-w-5xl mb-6 p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg text-center">
                     {error}
                 </div>
             )}
 
-            {/* Main Card */}
             <div className="w-full max-w-5xl bg-zinc-50 border border-zinc-200 rounded-2xl shadow-sm overflow-hidden flex flex-col lg:flex-row">
-                
-                {/* Left Panel - Job Description */}
                 <div className="flex-1 p-6 lg:p-8 space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3 text-zinc-900">
@@ -104,24 +127,30 @@ const Home = () => {
                     </div>
                 </div>
 
-                {/* Vertical Divider */}
                 <div className="hidden lg:block w-px bg-zinc-200 my-8"></div>
                 <div className="block lg:hidden h-px w-full bg-zinc-200 mx-8"></div>
 
-                {/* Right Panel - Profile */}
                 <div className="flex-1 p-6 lg:p-8 space-y-6">
                     <div className="flex items-center space-x-3 text-zinc-900 mb-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="text-zinc-500" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                         <h2 className="text-lg font-semibold">Your Profile</h2>
                     </div>
 
-                    {/* Upload Resume */}
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <label className="text-sm font-medium text-zinc-700">Upload Resume</label>
                             <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100">Best Results</span>
                         </div>
-                        <label className="relative block w-full border-2 border-dashed border-zinc-300 rounded-xl p-8 text-center cursor-pointer hover:border-zinc-400 hover:bg-white transition-colors" htmlFor="resume">
+                        {/* 3. ATTACH DRAG EVENTS AND DYNAMIC STYLING HERE */}
+                        <label 
+                            className={`relative block w-full border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+                                isDragging ? "border-zinc-900 bg-zinc-100" : "border-zinc-300 hover:border-zinc-400 hover:bg-white"
+                            }`}
+                            htmlFor="resume"
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                        >
                             <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto text-zinc-400 mb-3" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /></svg>
                             {fileName ? (
                                 <p className="text-sm font-medium text-zinc-900">{fileName}</p>
@@ -135,14 +164,12 @@ const Home = () => {
                         </label>
                     </div>
 
-                    {/* OR Divider */}
                     <div className="relative flex items-center py-2">
                         <div className="flex-grow border-t border-zinc-200"></div>
                         <span className="flex-shrink-0 mx-4 text-xs font-medium text-zinc-400 uppercase tracking-wider">OR</span>
                         <div className="flex-grow border-t border-zinc-200"></div>
                     </div>
 
-                    {/* Quick Self-Description */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-700" htmlFor="selfDescription">Quick Self-Description</label>
                         <textarea
@@ -159,7 +186,6 @@ const Home = () => {
                 </div>
             </div>
 
-            {/* Card Footer / Action Area */}
             <div className="w-full max-w-5xl mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2 text-sm text-zinc-500 bg-zinc-200/50 px-4 py-2 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" stroke="#fff" strokeWidth="2" /><line x1="12" y1="16" x2="12.01" y2="16" stroke="#fff" strokeWidth="2" /></svg>
@@ -175,7 +201,6 @@ const Home = () => {
                 </button>
             </div>
 
-            {/* Recent Reports List */}
             {reports && reports.length > 0 && (
                 <section className="w-full max-w-5xl mt-16 space-y-6">
                     <h2 className="text-xl font-semibold text-zinc-900">My Recent Interview Plans</h2>
@@ -203,7 +228,6 @@ const Home = () => {
                 </section>
             )}
 
-            {/* Page Footer */}
             <footer className="mt-auto pt-16 pb-8 flex space-x-6 text-sm text-zinc-500">
                 <a href="#" className="hover:text-zinc-900 transition-colors">Privacy Policy</a>
                 <a href="#" className="hover:text-zinc-900 transition-colors">Terms of Service</a>
