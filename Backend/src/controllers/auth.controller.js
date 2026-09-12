@@ -1,13 +1,13 @@
-const User = require("../models/user.model"); // Updated to match our new standard
-const BlacklistToken = require("../models/blacklist.model"); // Updated to match our new standard
+const User = require("../models/user.model"); 
+const BlacklistToken = require("../models/blacklist.model"); 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// Reusable secure cookie options
+// CROSS-ORIGIN COOKIE FIX: Updated sameSite and secure rules for Vercel/Render integration
 const cookieOptions = {
     httpOnly: true, // Prevents XSS attacks (JavaScript cannot access the cookie)
-    secure: process.env.NODE_ENV === "production", // Requires HTTPS in production
-    sameSite: "strict", // Prevents CSRF attacks
+    secure: true, // REQUIRED when sameSite is "none"
+    sameSite: "none", // REQUIRED for cross-domain cookies (Vercel to Render)
     maxAge: 24 * 60 * 60 * 1000 // 1 day in milliseconds
 };
 
@@ -51,7 +51,7 @@ async function loginUserController(req, res) {
         const user = await User.findOne({ email }).select("+password");
 
         if (!user) {
-            return res.status(401).json({ message: "Invalid email or password" }); // 401 is more accurate for auth failures
+            return res.status(401).json({ message: "Invalid email or password" }); 
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
