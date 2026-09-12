@@ -64,10 +64,15 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
 async function generatePdfFromHtml(htmlContent) {
     let browser;
     try {
-        // ⚡ FIX 2: Bypasses the broken cache and uses your PC's real Google Chrome
+        // ⚡ FIX 2: Render-compatible launch arguments to bypass strict Linux sandboxing
         browser = await puppeteer.launch({ 
             headless: true,
-            channel: "chrome" 
+            args: [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu"
+            ]
         });
         
         const page = await browser.newPage();
