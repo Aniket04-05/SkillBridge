@@ -2,7 +2,7 @@ import axios from "axios";
 
 // 1. SCALABILITY: Use Vite's environment variables with a local fallback
 const api = axios.create({
-    baseURL: import.meta.env.BACKEND_URL || "http://localhost:3000",
+    baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
     withCredentials: true
 });
 
